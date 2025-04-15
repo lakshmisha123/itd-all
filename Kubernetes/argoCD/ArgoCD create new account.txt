@@ -1,0 +1,61 @@
+ArgoCD create new account 
+1. Add the user to the accounts section in the ArgoCD ConfigMap.
+   kubectl edit configmap argocd-cm -n argocd
+   Add the username under data: (if not present data: add it)
+   data:
+  		accounts.<username>: login, apiKey
+
+  	Note: login: Allows password-based login.
+		   apiKey: Permits API key generation.
+
+
+2. 	Assign RBAC Roles
+	kubectl edit configmap argocd-rbac-cm -n argocd
+
+	Add be data: section
+		p: Defines a permission policy (e.g., p, role:admin, applications, *, allow).
+		g: Assigns a role to a user/group (e.g., role:admin).
+		
+		data:
+		  policy.csv: |
+		    # Assign roles to users/groups
+		    g, admin_user, role:admin
+		    g, tester, role:readonly
+		    g, dev-team, role:developer
+
+		    # Define permissions for roles
+		    p, role:admin, applications, *, allow  # Admins can do anything with apps
+		    p, role:readonly, applications, get, allow  # Readonly can only view apps
+		    p, role:developer, applications, sync, allow  # Developers can sync apps
+
+		Note:
+			g, admin_user, role:admin → admin_user user gets admin privileges.
+
+			Need More Control?
+				p, role:ci-bot, applications, sync, allow  # Allow CI bot to sync apps
+				p, role:ci-bot, applications, get, allow   # Allow CI bot to view apps
+		
+		In our case :
+			data:
+			  policy.csv: |
+				g, <username>, role:admin
+
+4. For login type user add password 
+	1. Generate a bcrypt hash which argocd supports
+		sudo apt install apache2-utils
+		htpasswd -bnBC 10 "" 'YourPasswordHere' | tr -d ':\n'
+
+	2. Add password 
+		kubectl edit secret argocd-secret -n argocd
+
+		data:
+			accounts.<username>.password: "<bcrypt_hash>"
+		
+
+3. Restart Argo CD Server
+   kubectl rollout restart deployment argocd-server -n argocd
+
+
+
+to get .dockerconfigjson for ECR OCI
+aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 637423622313.dkr.ecr.ap-south-1.amazonaws.com

@@ -1,0 +1,54 @@
+# 1️⃣ Secret: ECR OCI registry credentials for ArgoCD
+#To get .dockerconfigjson for ECR OCI
+#   aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 637423622313.dkr.ecr.ap-south-1.amazonaws.com
+#   cat ~/.docker/config.json | base64 -w 0
+#   Then replace {{ .dockerconfig_base64 }} in the YAML with the base64 output.
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ecr-helm-creds
+  namespace: argocd  # Must match ArgoCD namespace
+  annotations:
+    # This tells ArgoCD to use this secret for repo access
+    "managed-by": "argocd.argoproj.io"
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: >-
+    {{ .dockerconfig_base64 }}
+
+---
+
+# 2️⃣ ArgoCD Application pointing to the ECR-hosted Helm chart
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: backend
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    chart: backend
+    repoURL: oci://637423622313.dkr.ecr.ap-south-1.amazonaws.com/helm-charts
+    targetRevision: 1.0.0
+    helm:
+      values: |
+        cors_origin: "https://qtgem.com"
+        mongo:
+          host: mongo-service
+          port: 27017
+          user: "user"
+          password: "pass"
+        jwt_secret: "your-jwt"
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: backend
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

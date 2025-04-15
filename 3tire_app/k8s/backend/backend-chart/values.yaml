@@ -1,0 +1,34 @@
+replicaCount: 2
+
+image:
+  repository: harshajain/backend
+  tag: latest
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  hosts:
+    - host: backend.qtgem.com
+      paths:
+        - path: /
+          pathType: Prefix
+
+env:
+  mongoHost: mongo-service
+  mongoPort: "27017"
+  corsOrigin: "https://qtgem.com,https://www.qtgem.com,http://frontend-ci:3000,http://localhost:3000"
+
+secret:
+  appSecrets:
+    jwtSecret: c3VwZXJfc2VjcmV0X2tleQ==
+  mongoSecrets:
+    usernameKey: root-username
+    passwordKey: root-password
+    authDbKey: mongo-auth-db

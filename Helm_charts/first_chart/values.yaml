@@ -1,0 +1,10 @@
+deploymentName: "nginx-deployment-test"
+replicaCount: 2
+
+container:
+  name: "nginxcontainer"
+  containerPort: 80
+
+image:
+  repository: nginx
+  tag: "latest"

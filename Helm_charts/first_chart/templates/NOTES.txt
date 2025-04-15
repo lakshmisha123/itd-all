@@ -1,0 +1,7 @@
+Congratulations. Your application is deployed to K8S cluster 
+
+To check the status, run:
+    kubectl get pods -n app_pod
+
+To access the app 
+    https://example.com/api/users

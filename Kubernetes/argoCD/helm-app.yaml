@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: my-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: my-helm-chart
+    repoURL: oci://<AWS_ECR_URL>
+    targetRevision: 1.0.0   # Specify the version of the Helm chart
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: my-namespace
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
